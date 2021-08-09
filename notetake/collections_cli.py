@@ -1,5 +1,7 @@
 from notetake import CONFIG
+from pathlib import Path
 
+from notetake.utils import fzf
 from notetake.collections import Collections
 
 import typer
@@ -18,16 +20,31 @@ def new(name: str = typer.Argument(None)):
         c.new(name)
 
 
-
 @app.command()
-def edit(col, module, part):
+def edit():
     with Collections(CONFIG) as c:
-        typer.echo("editing collections")
-
+        collections_with_modules = [path.as_posix()
+                for path
+                in Path(CONFIG['note_paths']['collections']).glob('*/*/parts')]
+        c.edit(fzf(
+            collections_with_modules
+            ))
 
 @app.command()
-def build():
-    ...
+def add():
+    collections = [path.as_posix()
+                   for path
+                   in Path(CONFIG['note_paths']['collections']).glob('*')]
+
+    if len(collections) == 0:
+        typer.echo("there were no collections!")
+        return
+
+    with Collections(CONFIG) as c:
+        collection = fzf(collections)
+        name = input("what is the name of the new module?: ")
+        while not c.add(Path(collection), name):
+            name = input("what is the name of the new module?: ")
 
 
 if __name__ == '__main__':
