@@ -12,11 +12,13 @@ def fzf(args) -> str:
     print(fzf.stdout.strip())
     return fzf.stdout.strip()
 
-def editor(filepath) -> None:
-    if filepath is None:
+def editor(*paths) -> None:
+    print(paths)
+    if paths is None:
         return
     args = [EDITOR]
-    args += [filepath]
+    for path in paths:
+        args += [*path]
     sub.run(args, encoding='utf-8')
 
 def update_config() -> None:

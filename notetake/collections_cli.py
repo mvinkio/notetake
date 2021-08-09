@@ -23,27 +23,22 @@ def new(name: str = typer.Argument(None)):
 @app.command()
 def edit():
     with Collections(CONFIG) as c:
-        collections_with_modules = [path.as_posix()
-                for path
-                in Path(CONFIG['note_paths']['collections']).glob('*/*/parts')]
-        c.edit(fzf(
-            collections_with_modules
-            ))
+        collection = fzf(c.get_collections())
+        module = fzf(c.get_collections()[collection].get_modules())
+        c.edit(collection, module)
 
 @app.command()
 def add():
-    collections = [path.as_posix()
-                   for path
-                   in Path(CONFIG['note_paths']['collections']).glob('*')]
-
-    if len(collections) == 0:
-        typer.echo("there were no collections!")
-        return
-
     with Collections(CONFIG) as c:
-        collection = fzf(collections)
+        collections = c.get_collections()
+
+        if len(collections.keys()) == 0:
+            typer.echo("there were no collections!")
+            return
+
+        collection = fzf(collections.keys())
         name = input("what is the name of the new module?: ")
-        while not c.add(Path(collection), name):
+        while not c.add(collection, name):
             name = input("what is the name of the new module?: ")
 
 

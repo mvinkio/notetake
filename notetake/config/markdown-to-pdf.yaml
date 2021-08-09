@@ -77,7 +77,7 @@ file-scope: false
 
 # ERROR, WARNING, or INFO
 verbosity: INFO
-log-file: log.json
+log-file: null
 
 # citeproc, natbib, or biblatex. This only affects LaTeX
 # output.  If you want to use citeproc to format citations,
