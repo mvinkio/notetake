@@ -32,9 +32,10 @@ class Collections:
     def edit(self, collection, module):
         collection: Collection = self._collections[collection]
         module: Module = collection.get_modules()[module]
-        module.update_parts_view(module.get_parts())
+        module.update_parts_view(module.get_parts().values())
         module.set_figures_in_metadata()
-        editor([path.as_posix() for path in module.get_parts()])
+        self.set_active(module._root)
+        editor([path.as_posix() for path in module.get_parts().values()])
 
     def add(self, collection: str, name: str):
         module = self._path / collection / name
@@ -104,26 +105,27 @@ class Collection:
 
 
 class Module:
+    _parts = {}
+
     def __init__(self, path, config, pandoc_options, metadata):
         self.config = config
         self.pandoc_options = pandoc_options
         self.pandoc_metadata = metadata
 
         self._root = path
-        self._parts = path / 'parts'
+        self._parts_path = path / 'parts'
         self._figures = path / 'figures'
 
-
-        if not self._parts.exists():
-            self._parts.mkdir(parents=True)
+        if not self._parts_path.exists():
+            self._parts_path.mkdir(parents=True)
         if not self._figures.exists():
             self._figures.mkdir(parents=True)
 
-        self._parts_paths = list(path.glob('parts/*.md'))
+        parts = self.get_parts()
 
-        if len(self._parts_paths) == 0:
+        if not parts:
             self.add_part()
-            self.update_parts_view(self._parts_paths)
+            self.update_parts_view(self._parts.values())
 
     def update_parts_view(self, parts_paths: List[Path]):
         self.pandoc_options['input-files'] = [p.as_posix() for p in parts_paths]
@@ -134,13 +136,15 @@ class Module:
             yaml.safe_dump(data, f, **kwargs)
 
     def add_part(self):
-        parts = len(self._parts_paths)
+        parts = len(self.get_parts().keys())
         part: Path = self._root / 'parts' / str('part' + str(parts + 1) + '.md')
         part.touch()
-        self._parts_paths.append(part)
+        self._parts[part.name] = Path(part)
 
     def get_parts(self):
-        return self._parts_paths
+        for part in [x for x in self._parts_path.glob('*.md')]:
+            self._parts[part.name] = part
+        return self._parts
 
     def set_figures_in_metadata(self):
         header_string = self.pandoc_metadata['header-includes']
